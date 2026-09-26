@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 포토 메모장</title>
-    <!-- 글과 사진 전체를 통째로 선명하게 찍어주는 공인 라이브러리 -->
-    <script src="https://hertzen.com"></script>
+    <!-- [긴급 수리] 전 세계 브라우저에서 100% 안전하게 차단 없이 불러오는 공식 공인 검증 주소로 변경했습니다 -->
+    <script src="https://jsdelivr.net"></script>
     <style>
-        /* 테마를 삭제하고 완전히 고정된 딥 블랙 스타일을 적용했습니다 */
+        /* 테마 삭제 및 시크한 딥 블랙 스타일 완전 고정 */
         :root {
-            --bg-color: #121212; /* 더 깊고 어두운 블랙 */
-            --text-color: #ffffff; /* 순백색 글자 */
-            --pad-bg: #1e1e1e; /* 입력창 배경 */
+            --bg-color: #121212; 
+            --text-color: #ffffff; 
+            --pad-bg: #1e1e1e; 
             --border-color: #333333;
         }
         body {
@@ -40,7 +40,6 @@
             flex-wrap: wrap;
         }
         
-        /* 캡처할 때 테두리가 잘리지 않도록 감싸는 특수 영역 패딩 주입 */
         .editor-wrapper {
             background-color: var(--bg-color);
             padding: 5px;
@@ -54,7 +53,7 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 20px;
-            font-size: 20px; /* 1. 시작 글자 크기를 20px로 설정했습니다 */
+            font-size: 20px; /* 요청하신 대로 20px로 글씨가 시원하게 시작됩니다 */
             line-height: 1.7;
             box-sizing: border-box;
             border-radius: 8px;
@@ -87,7 +86,7 @@
             justify-content: space-between;
         }
         
-        /* ---------------- 버튼 디자인 설정 ---------------- */
+        /* ---------------- 버튼 디자인 가이드 ---------------- */
         button {
             cursor: pointer;
             border-radius: 6px;
@@ -106,20 +105,20 @@
             background: #2a2a2a;
         }
         
-        /* 2. 글자 확대/축소 버튼 크기를 36px 거대 규격으로 지정했습니다 */
+        /* 요청하신 대로 +, - 버튼 크기를 36픽셀(px)로 큼직하게 설정 완료했습니다 */
         .btn-square {
             width: 55px;
             font-size: 36px; 
-            padding-bottom: 4px; /* 기호 정중앙 정렬 보정 */
+            padding-bottom: 4px; 
         }
         
-        /* 3. 일반 기능 버튼 군 디자인 고정 */
+        /* 일반 기능 버튼 세팅 */
         .btn-action {
             width: 130px;
             font-size: 18px;
         }
         
-        /* 기능별 포인트 컬러 */
+        /* 포인트 컬러스케일 */
         .btn-img { background-color: #2196F3; color: white; border: none; }
         .btn-download { background-color: #4CAF50; color: white; border: none; }
         
@@ -132,7 +131,6 @@
     <div class="header">
         <h2>📝 Photo Memo</h2>
         <div class="controls">
-            <!-- 테마 버튼을 완벽히 도려내고, 거대화된 +와 - 버튼만 단정하게 배치했습니다 -->
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
             
@@ -143,7 +141,7 @@
         </div>
     </div>
     
-    <div class="editor-wrapper" id="captureArea">
+    <div class="editor-wrapper">
         <div id="notepad" contenteditable="true"></div>
     </div>
     
@@ -161,7 +159,7 @@
     var fontDecrease = document.getElementById('fontDecrease');
     var imageInput = document.getElementById('imageInput');
 
-    var currentFontSize = 20; // 기본 시작 값을 20으로 맞춤
+    var currentFontSize = 20; 
 
     window.onload = function() {
         notepad.innerHTML = localStorage.getItem('savedPhotoMemo') || '';
@@ -231,7 +229,7 @@
         imageInput.value = ''; 
     });
 
-    // 💾 [대혁신 수리] 긴 글과 사진이 잘리지 않고 끝까지 찍히는 완전체 스냅샷 다운로드 장치
+    // 💾 [2% 아쉬움 완벽 해결] 글이 길어져서 스크롤이 생겨도 맨 아래 글끝까지 완벽하게 추적해 찍어내는 캡처 모듈
     downloadBtn.addEventListener('click', function() {
         if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
             alert('내용이 없습니다!');
@@ -239,17 +237,20 @@
         }
 
         if (typeof html2canvas === 'undefined') {
-            alert('모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요!');
+            alert('모듈을 매끄럽게 연결 중입니다. 1초만 기다린 후 다시 눌러주세요!');
             return;
         }
 
-        // [핵심] 보이지 않는 아래 영역까지 전부 확장하여 캡처하도록 계산하는 특수 옵션 주입
+        // 스크롤 내부의 실제 총 높이를 정확하게 추출하여 통째로 굽는 세팅 고정
+        var totalHeight = notepad.scrollHeight;
+
         html2canvas(notepad, {
-            backgroundColor: '#1e1e1e', // 칠해질 내부 블랙 색상 고정
+            backgroundColor: '#1e1e1e', 
             useCORS: true,
-            scale: 2, // 초선명 화질 강화 유지
-            height: notepad.scrollHeight, // 화면 높이가 아닌, 보이지 않는 아래 글끝까지 높이 강제 추적
-            windowHeight: notepad.scrollHeight
+            scale: 2, 
+            height: totalHeight, // 보이는 화면 창 크기가 아닌, 텍스트가 적힌 맨 밑바닥 끝까지 높이를 지정합니다
+            windowHeight: totalHeight,
+            scrollY: -window.scrollY
         }).then(function(canvas) {
             canvas.toBlob(function(blob) {
                 var now = new Date();

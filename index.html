@@ -228,6 +228,49 @@
         scheduleSave();
     });
 
+    /* ---------- ★ 붙여넣기: 순수 텍스트만 삽입 (서식/배경 제거) ★ ---------- */
+    notepad.addEventListener('paste', (e) => {
+        e.preventDefault();
+
+        // 클립보드에서 순수 텍스트만 꺼내옴 (HTML/서식 완전 배제)
+        const raw = (e.clipboardData || window.clipboardData).getData('text/plain');
+        if (!raw) return;
+
+        // 줄바꿈 정규화 (CRLF, CR → LF)
+        const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+        const sel = window.getSelection();
+        if (!sel || !sel.rangeCount) return;
+
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+
+        // '\n' 을 <br> 로 변환해 조각으로 삽입
+        const lines = text.split('\n');
+        const frag = document.createDocumentFragment();
+        lines.forEach((line, idx) => {
+            if (idx > 0) frag.appendChild(document.createElement('br'));
+            if (line.length > 0) frag.appendChild(document.createTextNode(line));
+        });
+
+        const lastNode = frag.lastChild;
+        range.insertNode(frag);
+
+        // 커서를 삽입한 텍스트 끝으로 이동
+        if (lastNode) {
+            const newRange = document.createRange();
+            newRange.setStartAfter(lastNode);
+            newRange.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+        }
+
+        // 저장 및 카운트 갱신
+        updateCharCount();
+        updatePlaceholder();
+        scheduleSave();
+    });
+
     /* ---------- 폰트 크기 ---------- */
     function applyFontSize() {
         notepad.style.fontSize = currentFontSize + 'px';

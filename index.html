@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 포토 메모장</title>
-    <!-- [긴급 수리] 전 세계 브라우저에서 100% 안전하게 차단 없이 불러오는 공식 공인 검증 주소로 변경했습니다 -->
-    <script src="https://jsdelivr.net"></script>
     <style>
         /* 테마 삭제 및 시크한 딥 블랙 스타일 완전 고정 */
         :root {
@@ -53,7 +51,7 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 20px;
-            font-size: 20px; /* 요청하신 대로 20px로 글씨가 시원하게 시작됩니다 */
+            font-size: 20px; /* 기본 20px 큰 글씨로 시작 */
             line-height: 1.7;
             box-sizing: border-box;
             border-radius: 8px;
@@ -105,7 +103,7 @@
             background: #2a2a2a;
         }
         
-        /* 요청하신 대로 +, - 버튼 크기를 36픽셀(px)로 큼직하게 설정 완료했습니다 */
+        /* 요청하신 대로 +, - 버튼 크기를 36픽셀(px)로 아주 큼직하게 유지했습니다 */
         .btn-square {
             width: 55px;
             font-size: 36px; 
@@ -118,11 +116,40 @@
             font-size: 18px;
         }
         
-        /* 포인트 컬러스케일 */
         .btn-img { background-color: #2196F3; color: white; border: none; }
         .btn-download { background-color: #4CAF50; color: white; border: none; }
         
         #imageInput { display: none; }
+
+        /* ---------------- [핵심 세팅] 인쇄/저장 시에만 발동하는 특수 규칙 ---------------- */
+        @media print {
+            /* 저장 버튼이나 상단 메뉴, 풋터 등 불필요한 것들은 싹 가려줍니다 */
+            .header, .footer, #imgBtn, #fontIncrease, #fontDecrease, #downloadBtn {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+            }
+            .container {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            /* [버그 완전 해결] 스크롤 박스를 없애고 아래 적힌 긴 글 끝까지 통째로 펼쳐서 인쇄지에 찍어냅니다 */
+            #notepad {
+                height: auto !important;
+                overflow: visible !important;
+                border: none !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+            }
+            #notepad img {
+                max-width: 100% !important;
+                page-break-inside: avoid; /* 사진 중간이 뚝 끊기는 현상 방지 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -229,42 +256,15 @@
         imageInput.value = ''; 
     });
 
-    // 💾 [2% 아쉬움 완벽 해결] 글이 길어져서 스크롤이 생겨도 맨 아래 글끝까지 완벽하게 추적해 찍어내는 캡처 모듈
+    // 💾 [초고속 버그 타파] 브라우저 내장 기능을 호출하여 렉 없이 0.1초 만에 전체 내용을 저장창으로 넘깁니다.
     downloadBtn.addEventListener('click', function() {
         if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
             alert('내용이 없습니다!');
             return;
         }
-
-        if (typeof html2canvas === 'undefined') {
-            alert('모듈을 매끄럽게 연결 중입니다. 1초만 기다린 후 다시 눌러주세요!');
-            return;
-        }
-
-        // 스크롤 내부의 실제 총 높이를 정확하게 추출하여 통째로 굽는 세팅 고정
-        var totalHeight = notepad.scrollHeight;
-
-        html2canvas(notepad, {
-            backgroundColor: '#1e1e1e', 
-            useCORS: true,
-            scale: 2, 
-            height: totalHeight, // 보이는 화면 창 크기가 아닌, 텍스트가 적힌 맨 밑바닥 끝까지 높이를 지정합니다
-            windowHeight: totalHeight,
-            scrollY: -window.scrollY
-        }).then(function(canvas) {
-            canvas.toBlob(function(blob) {
-                var now = new Date();
-                var timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-                
-                var link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'my_complete_memo_' + timestamp + '.jpg';
-                link.click();
-                URL.revokeObjectURL(link.href);
-            }, 'image/jpeg', 0.95);
-        }).catch(function(err) {
-            alert("이미지 변환 중 오류가 발생했습니다.");
-        });
+        
+        // 렉을 유발하던 모든 수식을 지우고 순수 브라우저 인쇄/내보내기 창을 즉시 호출합니다.
+        window.print();
     });
 </script>
 

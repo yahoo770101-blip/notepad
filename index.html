@@ -92,7 +92,7 @@
             justify-content: space-between;
         }
         
-        /* ---------------- 버튼 디자인 세팅 ---------------- */
+        /* ---------------- 버튼 디자인 설정 ---------------- */
         button {
             cursor: pointer;
             border-radius: 6px;
@@ -113,7 +113,7 @@
             opacity: 0.9;
         }
         
-        /* 1. 정사각형 버튼 군 (테마, +, -) */
+        /* 1. 정사각형 버튼 군 (테마가 맨 앞, 그 다음 +, -) */
         .btn-square {
             width: 55px;
         }
@@ -143,7 +143,7 @@
     <div class="header">
         <h2>📝 Photo Memo</h2>
         <div class="controls">
-            <!-- 요청하신 대로 테마 전환 버튼이 맨 앞, 그 뒤로 +, - 버튼 순서로 정렬했습니다 -->
+            <!-- 요청하신 대로 테마가 맨 앞, 그 뒤로 +, - 정렬 순서 유지 -->
             <button id="themeToggle" class="btn-square" title="테마 전환"></button>
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
@@ -164,11 +164,6 @@
         <div><span id="charCount">0</span> 자</div>
     </div>
 </div>
-
-<!-- 캡처 엔진 핵심 소스 코드 파일 내부 내장 상태 유지 -->
-<script>
-    !function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self).html2canvas=t()}(this,function(){"use strict";return function(e,t){t=t||{};const n=document.createElement("canvas"),o=e.offsetWidth,r=e.offsetHeight;n.width=o*(t.scale||1),n.height=r*(t.scale||1),n.style.width=o+"px",n.style.height=r+"px";const c=n.getContext("2d");c.scale(t.scale||1,t.scale||1),c.fillStyle=t.backgroundColor||"#ffffff",c.fillRect(0,0,o,r);const a=e.innerText;c.font=window.getComputedStyle(e).fontSize+" sans-serif",c.fillStyle=window.getComputedStyle(e).color,c.fillText(a,15,35);const i=e.getElementsByTagName("img");let d=0;const l=()=>{if(d>=i.length)return Promise.resolve(n);const e=i[d],o=new Image;return o.crossOrigin="anonymous",o.src=e.src,new Promise(r=>{o.onload=()=>{c.drawImage(o,15,60,o.width*0.8,o.height*0.8),d++,l().then(r)},o.onerror=()=>{d++,l().then(r)}})};return l().then(()=>n)}});
-</script>
 
 <script>
     const notepad = document.getElementById('notepad');
@@ -245,7 +240,7 @@
 
     imageInput.addEventListener('change', function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files;
+        const file = e.target.files[0];
 
         const reader = new FileReader();
         reader.onload = function(event) {
@@ -264,21 +259,58 @@
         imageInput.value = ''; 
     });
 
-    // 사진+글 통합 즉시 이미지 저장 가동
+    // 외부 오류 라이브러리를 완전히 대체하는 100% 브라우저 순수 표준 드로잉 저장 장치
     downloadBtn.addEventListener('click', () => {
-        if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
+        const textLines = notepad.innerText.split('\n');
+        const imgs = notepad.getElementsByTagName('img');
+        
+        if (!notepad.innerText.trim() && imgs.length === 0) {
             alert('내용이 없습니다!');
             return;
         }
 
-        const currentTheme = document.body.getAttribute('data-theme');
-        const bgPattern = currentTheme === 'light' ? '#ffffff' : '#2d2d2d';
+        // 가상 캔버스를 생성해 글과 이미지를 차례대로 안전하게 도화지에 그려줍니다
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const width = Math.max(600, notepad.offsetWidth);
+        let height = 40; // 여백 확보
+        
+        // 전체 높이 미리 계산
+        height += textLines.length * (currentFontSize * 1.6);
+        if (imgs.length > 0) height += imgs.length * 320;
 
-        html2canvas(notepad, {
-            backgroundColor: bgPattern,
-            scale: 2
-        }).then(canvas => {
-            canvas.toBlob(blob => {
-                const now = new Date();
-                const timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-                
+        canvas.width = width;
+        canvas.height = height;
+
+        // 배경색 칠하기
+        const currentTheme = document.body.getAttribute('data-theme');
+        ctx.fillStyle = currentTheme === 'light' ? '#ffffff' : '#2d2d2d';
+        ctx.fillRect(0, 0, width, height);
+
+        // 글꼴 스타일 지정
+        ctx.font = `${currentFontSize}px sans-serif`;
+        ctx.fillStyle = currentTheme === 'light' ? '#333333' : '#f5f5f5';
+        ctx.textBaseline = 'top';
+
+        let currentY = 20;
+
+        // 1단계: 텍스트 줄바꿈 순차 렌더링
+        textLines.forEach(line => {
+            if (line.trim() !== "") {
+                ctx.fillText(line, 20, currentY);
+                currentY += currentFontSize * 1.6;
+            }
+        });
+
+        currentY += 15;
+
+        // 2단계: 이미지 객체 순차 그리기 기법 연동
+        let loadedCount = 0;
+        if (imgs.length === 0) {
+            saveCanvas();
+        } else {
+            for (let i = 0; i < imgs.length; i++) {
+                const imgObj = new Image();
+                imgObj.src = imgs[i].src;
+                imgObj.onload = function() {

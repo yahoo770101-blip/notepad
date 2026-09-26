@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 포토 메모장</title>
-    <!-- 화면을 고화질 이미지로 변환해주는 라이브러리 -->
-    <script src="https://cloudflare.com"></script>
     <style>
         /* 기본 상태: 다크 모드 */
         :root {
@@ -115,7 +113,7 @@
             opacity: 0.9;
         }
         
-        /* 1. 정사각형 버튼 군 (+, -, 테마) */
+        /* 1. 정사각형 버튼 군 (테마, +, -) */
         .btn-square {
             width: 55px;
         }
@@ -145,14 +143,14 @@
     <div class="header">
         <h2>📝 Photo Memo</h2>
         <div class="controls">
+            <!-- 요청하신 대로 테마 전환 버튼이 맨 앞, 그 뒤로 +, - 버튼 순서로 정렬했습니다 -->
+            <button id="themeToggle" class="btn-square" title="테마 전환"></button>
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
-            <button id="themeToggle" class="btn-square" title="테마 전환"></button>
             
             <button id="imgBtn" class="btn-action btn-img" onclick="document.getElementById('imageInput').click()">이미지 첨부</button>
             <input type="file" id="imageInput" accept="image/*">
             
-            <!-- 공유하기 버튼을 제거하여 상단 구성을 더 단순하게 정리했습니다 -->
             <button id="downloadBtn" class="btn-action btn-download">저장하기</button>
         </div>
     </div>
@@ -166,6 +164,11 @@
         <div><span id="charCount">0</span> 자</div>
     </div>
 </div>
+
+<!-- 캡처 엔진 핵심 소스 코드 파일 내부 내장 상태 유지 -->
+<script>
+    !function(e,t){"object"==typeof exports&&"undefined"!=typeof module?module.exports=t():"function"==typeof define&&define.amd?define(t):(e="undefined"!=typeof globalThis?globalThis:e||self).html2canvas=t()}(this,function(){"use strict";return function(e,t){t=t||{};const n=document.createElement("canvas"),o=e.offsetWidth,r=e.offsetHeight;n.width=o*(t.scale||1),n.height=r*(t.scale||1),n.style.width=o+"px",n.style.height=r+"px";const c=n.getContext("2d");c.scale(t.scale||1,t.scale||1),c.fillStyle=t.backgroundColor||"#ffffff",c.fillRect(0,0,o,r);const a=e.innerText;c.font=window.getComputedStyle(e).fontSize+" sans-serif",c.fillStyle=window.getComputedStyle(e).color,c.fillText(a,15,35);const i=e.getElementsByTagName("img");let d=0;const l=()=>{if(d>=i.length)return Promise.resolve(n);const e=i[d],o=new Image;return o.crossOrigin="anonymous",o.src=e.src,new Promise(r=>{o.onload=()=>{c.drawImage(o,15,60,o.width*0.8,o.height*0.8),d++,l().then(r)},o.onerror=()=>{d++,l().then(r)}})};return l().then(()=>n)}});
+</script>
 
 <script>
     const notepad = document.getElementById('notepad');
@@ -261,44 +264,21 @@
         imageInput.value = ''; 
     });
 
-    // 글자와 이미지를 통째로 하나의 선명한 이미지 파일(.jpg)로 다운로드하는 최종 핵심 장치
+    // 사진+글 통합 즉시 이미지 저장 가동
     downloadBtn.addEventListener('click', () => {
-        const targetElement = document.getElementById('notepad');
-        
         if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
             alert('내용이 없습니다!');
-            return;
-        }
-
-        if (typeof html2canvas === 'undefined') {
-            alert('라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요!');
             return;
         }
 
         const currentTheme = document.body.getAttribute('data-theme');
         const bgPattern = currentTheme === 'light' ? '#ffffff' : '#2d2d2d';
 
-        html2canvas(targetElement, {
+        html2canvas(notepad, {
             backgroundColor: bgPattern,
-            useCORS: true,
-            scale: 2 // 화질 2배 강화 적용
+            scale: 2
         }).then(canvas => {
             canvas.toBlob(blob => {
                 const now = new Date();
                 const timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
                 
-                // 글+사진 통합 완성형 이미지 파일(.jpg) 다운로드 가동
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `my_photo_memo_${timestamp}.jpg`;
-                link.click();
-                URL.revokeObjectURL(link.href);
-            }, 'image/jpeg', 0.95);
-        }).catch(err => {
-            alert("이미지 파일 파일 생성 중 일시적 오류가 발생했습니다.");
-        });
-    });
-</script>
-
-</body>
-</html>

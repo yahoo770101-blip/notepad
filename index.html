@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 포토 메모장</title>
-    <!-- 화면을 이미지로 변환해주는 라이브러리 -->
-    <script src="https://cloudflare.com"></script>
+    <!-- 화면 이미지 변환용 라이브러리를 안전한 최신 주소로 연결합니다 -->
+    <script src="https://hertzen.com"></script>
     <style>
         /* 기본 상태: 다크 모드 */
         :root {
@@ -78,9 +78,12 @@
             margin: 12px 0;
             border-radius: 6px;
         }
+        
+        /* 가이드 문구 */
         #notepad:empty:before {
-            content: attr(placeholder);
+            content: "여기에 내용을 입력하거나 사진을 추가하세요. 자동으로 저장됩니다...";
             color: #888;
+            cursor: text;
         }
 
         .footer {
@@ -91,7 +94,7 @@
             justify-content: space-between;
         }
         
-        /* ---------------- 버튼 디자인 가이드 라인 ---------------- */
+        /* ---------------- 버튼 디자인 세팅 (보내주신 핏 고정) ---------------- */
         button {
             cursor: pointer;
             border-radius: 6px;
@@ -112,24 +115,24 @@
             opacity: 0.9;
         }
         
-        /* 1. 정사각형 버튼 3종 (+, -, 테마) */
+        /* 1. 정사각형 버튼 군 (+, -, 테마) */
         .btn-square {
             width: 55px;
         }
 
-        /* [요청 사항 완료] 대각선 방향을 왼쪽위(흰색)에서 오른쪽아래(검은색)로 전환 배치 완료 */
+        /* [디자인] 왼쪽 위는 흰색, 오른쪽 아래는 검은색 대각선 완벽 일치 */
         #themeToggle {
             background: linear-gradient(135deg, #ffffff 50%, #111111 50%) !important;
             border: 1px solid #555;
         }
         
-        /* 2. 일반 기능 버튼 3종 가로 크기 125px 일치화 */
+        /* 2. 가로 길이가 완전히 같은 일반 기능 버튼 군 */
         .btn-action {
             width: 125px;
             font-size: 17px;
         }
         
-        /* 기능별 포인트 색상 배치 */
+        /* 기능별 포인트 컬러 */
         .btn-img { background-color: #2196F3; color: white; border: none; }
         .btn-share { background-color: #FF9800; color: white; border: none; }
         .btn-download { background-color: #4CAF50; color: white; border: none; }
@@ -156,8 +159,7 @@
     </div>
     
     <div class="editor-wrapper">
-        <!-- 빈 박스 처리 버그를 방지하기 위해 가상 div 자리를 완전 삭제하고 초기 공백을 배치합니다 -->
-        <div id="notepad" contenteditable="true" placeholder="여기에 내용을 입력하거나 사진을 추가하세요. 자동으로 저장됩니다..."></div>
+        <div id="notepad" contenteditable="true"></div>
     </div>
     
     <div class="footer">
@@ -178,28 +180,30 @@
 
     let currentFontSize = 18;
 
+    // 데이터 저장/관리 안전화 함수
+    function safeGet(key, defaultVal) {
+        try { return localStorage.getItem(key) || defaultVal; } catch(e) { return defaultVal; }
+    }
+    function safeSet(key, val) {
+        try { localStorage.setItem(key, val); } catch(e) {}
+    }
+
     window.onload = () => {
-        // 로컬 환경 브라우저 데이터베이스 입출력 에러 방어 처리
-        try {
-            notepad.innerHTML = localStorage.getItem('savedPhotoMemo') || '';
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.body.setAttribute('data-theme', savedTheme);
-            
-            const savedFontSize = localStorage.getItem('notepadFontSize');
-            if (savedFontSize) {
-                currentFontSize = parseInt(savedFontSize);
-            }
-        } catch(e) {}
+        notepad.innerHTML = safeGet('savedPhotoMemo', '');
         
+        const savedTheme = safeGet('theme', 'dark');
+        document.body.setAttribute('data-theme', savedTheme);
+
+        const savedFontSize = safeGet('notepadFontSize', '18');
+        currentFontSize = parseInt(savedFontSize);
         notepad.style.fontSize = currentFontSize + 'px';
+        
         updateCharCount();
         updateImgSize();
     };
 
     notepad.addEventListener('input', () => {
-        try {
-            localStorage.setItem('savedPhotoMemo', notepad.innerHTML);
-        } catch(e) {}
+        safeSet('savedPhotoMemo', notepad.innerHTML);
         updateCharCount();
     });
 
@@ -214,85 +218,92 @@
         }
     }
 
-    // 테마 토글 연동 정상화
+    // 1. 테마 기능 정상 복구
     themeToggle.addEventListener('click', () => {
         const currentTheme = document.body.getAttribute('data-theme') || 'dark';
         const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.body.setAttribute('data-theme', newTheme);
-        try {
-            localStorage.setItem('theme', newTheme);
-        } catch(e) {}
+        safeSet('theme', newTheme);
     });
 
+    // 글자 크기 증가 (+)
     fontIncrease.addEventListener('click', () => {
         if (currentFontSize < 60) {
             currentFontSize += 2;
             notepad.style.fontSize = currentFontSize + 'px';
-            try { localStorage.setItem('notepadFontSize', currentFontSize); } catch(e) {}
+            safeSet('notepadFontSize', currentFontSize);
             updateImgSize();
         }
     });
 
+    // 글자 크기 감소 (-)
     fontDecrease.addEventListener('click', () => {
         if (currentFontSize > 12) {
             currentFontSize -= 2;
             notepad.style.fontSize = currentFontSize + 'px';
-            try { localStorage.setItem('notepadFontSize', currentFontSize); } catch(e) {}
+            safeSet('notepadFontSize', currentFontSize);
             updateImgSize();
         }
     });
 
-    // 🖼️ 이미지 첨부 기능 전면 보완 (로컬 컴퓨터 내 파일 업로드 완벽 작동)
+    // 2. 이미지 첨부 기능 정상 복구 (GitHub 환경 완벽 호환)
     imageInput.addEventListener('change', function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
+        const file = e.target.files[0]; // 단일 파일 배열 정상 추출
 
         const reader = new FileReader();
         reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
+            const newImg = document.createElement('img');
+            newImg.src = event.target.result;
+            
+            notepad.focus();
+            
+            // 모바일 및 PC 브라우저 커서 혼선 시 맨 밑에 안정적으로 밀어 넣는 로직 고정
+            const selection = window.getSelection();
+            let inserted = false;
+            
+            if (selection && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (notepad.contains(range.commonAncestorContainer)) {
+                    range.insertNode(newImg);
+                    range.insertNode(document.createElement('br'));
+                    inserted = true;
                 }
-                canvas.width = width;
-                canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                const compressedUrl = canvas.toDataURL('image/jpeg', 0.7); 
-                const newImg = document.createElement('img');
-                newImg.src = compressedUrl;
-                
-                notepad.focus();
-                
-                // 로컬 브라우저에서 인쇄 커서 위치 판별 실패 시 맨 뒤 안착 보장 기술 적용
-                const selection = window.getSelection();
-                let inserted = false;
-                
-                if (selection && selection.rangeCount > 0) {
-                    const range = selection.getRangeAt(0);
-                    if (notepad.contains(range.commonAncestorContainer)) {
-                        range.insertNode(newImg);
-                        range.insertNode(document.createElement('br'));
-                        inserted = true;
-                    }
-                }
-                
-                if (!inserted) {
-                    notepad.appendChild(newImg);
-                    notepad.appendChild(document.createElement('br'));
-                }
-                
-                try { localStorage.setItem('savedPhotoMemo', notepad.innerHTML); } catch(e) {}
-                updateCharCount();
-                updateImgSize();
-            };
-            img.src = event.target.result;
+            }
+            
+            if (!inserted) {
+                notepad.appendChild(newImg);
+                notepad.appendChild(document.createElement('br'));
+            }
+            
+            safeSet('savedPhotoMemo', notepad.innerHTML);
+            updateCharCount();
+            updateImgSize();
         };
+        reader.readAsDataURL(file);
+        imageInput.value = ''; 
+    });
+
+    // 3. 저장하기 정상 복구
+    downloadBtn.addEventListener('click', () => {
+        const textData = notepad.innerText;
+        if (!textData.trim()) {
+            alert('다운로드할 내용이 없습니다!');
+            return;
+        }
+
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        
+        const now = new Date();
+        const timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+        link.download = `memo_${timestamp}.txt`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+
+    // 4. 공유하기 정상 복구 (인터넷 서버 환경 캡처 모듈 전면 가동)
+    shareBtn.addEventListener('click', () => {
+        const targetElement = document.getElementById('notepad');
+        

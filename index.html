@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 메모장</title>
     <style>
+        /* 기본 상태: 다크 모드 */
         :root {
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --pad-bg: #f9f9f9;
-        }
-        [data-theme="dark"] {
             --bg-color: #1e1e1e;
             --text-color: #f5f5f5;
             --pad-bg: #2d2d2d;
+        }
+        /* 라이트 모드 */
+        [data-theme="light"] {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --pad-bg: #f9f9f9;
         }
         body {
             background-color: var(--bg-color);
@@ -37,7 +39,7 @@
         }
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
         }
         textarea {
@@ -45,9 +47,9 @@
             height: 70vh;
             background-color: var(--pad-bg);
             color: var(--text-color);
-            border: 1px solid #ccc;
+            border: 1px solid #444;
             padding: 15px;
-            font-size: 18px; /* 1. 여기를 18px로 변경하여 기본 크기를 키웠습니다 */
+            font-size: 18px; /* 기본 글자 크기 */
             line-height: 1.6;
             resize: none;
             box-sizing: border-box;
@@ -58,22 +60,30 @@
             font-size: 14px;
             color: #888;
         }
+        
+        /* 모든 상단 버튼 공통 스타일 (기존보다 1.5배 확대) */
         button {
-            padding: 8px 12px;
+            padding: 12px 24px; /* 버튼 상하좌우 여백을 넓혀 크기를 키웠습니다 */
             cursor: pointer;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+            border-radius: 6px;
+            border: 1px solid #555;
             background: var(--pad-bg);
             color: var(--text-color);
             font-weight: bold;
+            font-size: 24px; /* 글자 크기를 기존 16px에서 24px로 1.5배 키웠습니다 */
+            transition: background 0.2s;
         }
         button:hover {
             opacity: 0.9;
         }
+        
+        /* 저장 버튼만 글자 크기를 약간 조절하여 균형을 맞췄습니다 */
         .btn-download {
             background-color: #4CAF50;
             color: white;
             border: none;
+            font-size: 20px;
+            padding: 15px 24px;
         }
     </style>
 </head>
@@ -83,10 +93,11 @@
     <div class="header">
         <h2>📝 My Notepad</h2>
         <div class="controls">
-            <button id="fontDecrease" title="글자 축소">A-</button>
-            <button id="fontIncrease" title="글자 확대">A+</button>
-            <button id="themeToggle">테마 전환</button>
-            <button id="downloadBtn" class="btn-download">💾 .txt 저장</button>
+            <!-- 요청하신 대로 + 버튼을 왼쪽, - 버튼을 오른쪽에 배치했습니다 -->
+            <button id="fontIncrease" title="글자 확대">+</button>
+            <button id="fontDecrease" title="글자 축소">-</button>
+            <button id="themeToggle" title="테마 전환">🌓</button> <!-- 텍스트 대신 직관적인 아이콘으로 변경 -->
+            <button id="downloadBtn" class="btn-download">💾 저장</button>
         </div>
     </div>
     
@@ -105,14 +116,13 @@
     const fontIncrease = document.getElementById('fontIncrease');
     const fontDecrease = document.getElementById('fontDecrease');
 
-    // 2. 프로그램 내부 변수도 기본값을 18로 변경했습니다
     let currentFontSize = 18;
 
     window.onload = () => {
         notepad.value = localStorage.getItem('savedMemo') || '';
         updateCharCount();
         
-        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedTheme = localStorage.getItem('theme') || 'dark';
         document.body.setAttribute('data-theme', savedTheme);
 
         const savedFontSize = localStorage.getItem('notepadFontSize');
@@ -120,7 +130,6 @@
             currentFontSize = parseInt(savedFontSize);
             notepad.style.fontSize = currentFontSize + 'px';
         } else {
-            // 저장된 크기가 없을 때만 기본 18px 적용
             notepad.style.fontSize = currentFontSize + 'px';
         }
     };
@@ -136,14 +145,14 @@
 
     themeToggle.addEventListener('click', () => {
         const currentTheme = document.body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
         
         document.body.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
     });
 
     fontIncrease.addEventListener('click', () => {
-        if (currentFontSize < 40) {
+        if (currentFontSize < 60) { // 눈이 편하시도록 최대 크기를 60px까지 확장했습니다
             currentFontSize += 2;
             notepad.style.fontSize = currentFontSize + 'px';
             localStorage.setItem('notepadFontSize', currentFontSize);

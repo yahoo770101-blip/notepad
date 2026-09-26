@@ -1,139 +1,120 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IM NotePad</title>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --text-color: #ffffff;
-            --pad-bg: #1e1e1e;
-            --border-color: #333333;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IM NotePad</title>
+<style>
+    :root {
+        --bg-color: #121212;
+        --text-color: #ffffff;
+        --pad-bg: #1e1e1e;
+        --border-color: #333333;
+    }
+    * { box-sizing: border-box; }
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                     "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+        margin: 0;
+        padding: 20px;
+    }
+    .container { max-width: 850px; margin: 0 auto; }
 
-        * { box-sizing: border-box; }
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .header h2 { margin: 0; font-size: 20px; }
+    .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                         "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
+    .editor-wrapper {
+        position: relative;
+        padding: 5px;
+        border-radius: 8px;
+        background-color: var(--bg-color);
+    }
 
-        .container {
-            max-width: 850px;
-            margin: 0 auto;
-        }
+    #notepad {
+        width: 100%;
+        height: 65vh;
+        background-color: var(--pad-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        padding: 20px;
+        font-size: 20px;
+        line-height: 1.7;
+        border-radius: 8px;
+        overflow-y: auto;
+        word-break: break-word;
+        white-space: pre-wrap;
+        outline: none;
+        text-align: left;
+    }
+    #notepad:focus { outline: 2px solid #2196F3; }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
+    #placeholder {
+        position: absolute;
+        top: 25px;
+        left: 25px;
+        right: 25px;
+        color: #666;
+        font-size: 20px;
+        line-height: 1.7;
+        pointer-events: none;
+        user-select: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        display: none;
+    }
+    #placeholder.visible { display: block; }
 
-        .header h2 {
-            margin: 0;
-            font-size: 20px;
-        }
+    .footer {
+        margin-top: 10px;
+        font-size: 14px;
+        color: #666;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+    button {
+        cursor: pointer;
+        border-radius: 6px;
+        border: 1px solid #444;
+        background: var(--pad-bg);
+        color: var(--text-color);
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 55px;
+        padding: 0 12px;
+        transition: background 0.15s;
+        user-select: none;
+    }
+    button:hover { background: #2a2a2a; }
 
-        .editor-wrapper {
-            background-color: var(--bg-color);
-            padding: 5px;
-            border-radius: 8px;
-        }
+    .btn-square { width: 55px; font-size: 32px; line-height: 1; }
+    .btn-action { min-width: 120px; font-size: 16px; }
+    .btn-clear { background-color: #b71c1c; color: white; border: none; }
+    .btn-clear:hover { background-color: #8e0000; }
+    .btn-download { background-color: #4CAF50; color: white; border: none; }
+    .btn-download:hover { background-color: #43A047; }
 
-        #notepad {
-            width: 100%;
-            height: 65vh;
-            background-color: var(--pad-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 20px;
-            font-size: 20px;
-            line-height: 1.7;
-            border-radius: 8px;
-            overflow-y: auto;
-            word-break: break-word;
-            white-space: pre-wrap;
-            outline: none;
-        }
-
-        #notepad:focus {
-            outline: 2px solid #2196F3;
-        }
-
-        /* placeholder */
-        #notepad.is-empty:before {
-            content: "여기를 클릭하고, 메모하세요.";
-            color: #666;
-            cursor: text;
-            pointer-events: none;
-        }
-
-        .footer {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #666;
-            display: flex;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        button {
-            cursor: pointer;
-            border-radius: 6px;
-            border: 1px solid #444;
-            background: var(--pad-bg);
-            color: var(--text-color);
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 55px;
-            padding: 0 12px;
-            transition: background 0.15s, transform 0.05s;
-            user-select: none;
-        }
-        button:hover { background: #2a2a2a; }
-        button:active { transform: scale(0.97); }
-
-        .btn-square {
-            width: 55px;
-            font-size: 32px;
-            line-height: 1;
-        }
-
-        .btn-action {
-            min-width: 120px;
-            font-size: 16px;
-        }
-
-        .btn-clear { background-color: #b71c1c; color: white; border: none; }
-        .btn-clear:hover { background-color: #8e0000; }
-
-        .btn-download { background-color: #4CAF50; color: white; border: none; }
-        .btn-download:hover { background-color: #43A047; }
-
-        @media (max-width: 600px) {
-            .btn-action { min-width: 90px; font-size: 14px; height: 48px; }
-            .btn-square { width: 48px; height: 48px; font-size: 26px; }
-            #notepad { font-size: 18px; padding: 14px; }
-        }
-    </style>
+    @media (max-width: 600px) {
+        .btn-action { min-width: 90px; font-size: 14px; height: 48px; }
+        .btn-square { width: 48px; height: 48px; font-size: 26px; }
+        #notepad { font-size: 18px; padding: 14px; }
+        #placeholder { font-size: 18px; top: 19px; left: 19px; right: 19px; }
+    }
+</style>
 </head>
 <body>
 
@@ -143,7 +124,6 @@
         <div class="controls">
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">−</button>
-
             <button id="clearBtn" class="btn-action btn-clear" title="전체 삭제">전체삭제</button>
             <button id="downloadBtn" class="btn-action btn-download" title="txt로 저장">저장하기</button>
         </div>
@@ -151,6 +131,7 @@
 
     <div class="editor-wrapper">
         <div id="notepad" contenteditable="true" spellcheck="false"></div>
+        <div id="placeholder" class="visible">여기를 클릭하고, 메모하세요.</div>
     </div>
 
     <div class="footer">
@@ -169,6 +150,7 @@
     const MAX_FONT = 40;
 
     const notepad      = document.getElementById('notepad');
+    const placeholder  = document.getElementById('placeholder');
     const charCount    = document.getElementById('charCount');
     const downloadBtn  = document.getElementById('downloadBtn');
     const clearBtn     = document.getElementById('clearBtn');
@@ -178,19 +160,33 @@
     let currentFontSize = DEFAULT_FONT;
     let saveTimer = null;
 
-    /* ---------- 초기화 ---------- */
-    function init() {
-        const savedText = localStorage.getItem(STORAGE_KEY) || '';
-        if (savedText) {
-            notepad.innerText = savedText;
-        }
+    /* ---------- 내용 판정: 텍스트 + 이미지만 본다 (<br> 무시) ---------- */
+    function hasContent() {
+        if (notepad.querySelector('img')) return true;
+        const t = (notepad.textContent || '').replace(/[\s\u00A0]/g, '');
+        return t.length > 0;
+    }
 
-        const savedFont = parseInt(localStorage.getItem(FONT_KEY), 10);
-        if (!isNaN(savedFont) && savedFont >= MIN_FONT && savedFont <= MAX_FONT) {
-            currentFontSize = savedFont;
-        }
-        notepad.style.fontSize = currentFontSize + 'px';
+    /* ---------- ★ placeholder 갱신: "빈 상태 + 포커스 아님" 일 때만 표시 ★ ---------- */
+    function updatePlaceholder() {
+        const isEmpty = !hasContent();
+        const isFocused = document.activeElement === notepad;
 
+        if (isEmpty && !isFocused) {
+            placeholder.classList.add('visible');
+        } else {
+            placeholder.classList.remove('visible');
+        }
+    }
+
+    /* ---------- 글자수 갱신 ---------- */
+    function updateCharCount() {
+        const t = notepad.textContent || '';
+        charCount.textContent = t.length;
+    }
+
+    /* ---------- 통합 갱신 ---------- */
+    function refresh() {
         updateCharCount();
         updatePlaceholder();
     }
@@ -200,52 +196,75 @@
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
             try {
-                localStorage.setItem(STORAGE_KEY, notepad.innerText);
+                localStorage.setItem(STORAGE_KEY, notepad.innerText || '');
             } catch (e) {
                 console.warn('저장 실패:', e);
             }
         }, 250);
     }
 
-    /* ---------- 글자수 / placeholder ---------- */
-    function updateCharCount() {
-        const text = notepad.innerText.replace(/\n$/, '');
-        charCount.textContent = text.length;
+    /* ---------- 커서를 맨 앞으로 ---------- */
+    function moveCursorToStart() {
+        const range = document.createRange();
+        range.selectNodeContents(notepad);
+        range.collapse(true);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
     }
 
-    function updatePlaceholder() {
-        const isEmpty =
-            notepad.innerHTML.trim() === '' ||
-            notepad.innerHTML === '<br>' ||
-            notepad.innerText.trim() === '';
-        notepad.classList.toggle('is-empty', isEmpty);
+    /* ---------- 초기화 ---------- */
+    function init() {
+        const saved = localStorage.getItem(STORAGE_KEY) || '';
+        if (saved) notepad.innerText = saved;
+
+        const savedFont = parseInt(localStorage.getItem(FONT_KEY), 10);
+        if (!isNaN(savedFont) && savedFont >= MIN_FONT && savedFont <= MAX_FONT) {
+            currentFontSize = savedFont;
+        }
+        applyFontSize();
+
+        refresh();
+
+        // DOM 변화 무조건 감지
+        const mo = new MutationObserver(() => {
+            refresh();
+            scheduleSave();
+        });
+        mo.observe(notepad, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
     }
 
-    /* ---------- 입력 이벤트 ---------- */
-    notepad.addEventListener('input', () => {
-        updateCharCount();
+    /* ---------- ★ 포커스/블러: placeholder 즉시 반응 ★ ---------- */
+    notepad.addEventListener('focus', () => {
         updatePlaceholder();
-        scheduleSave();
+        if (!hasContent()) moveCursorToStart();
+    });
+    notepad.addEventListener('blur', () => {
+        updatePlaceholder();
     });
 
-    /* ---------- ★ 붙여넣기: 순수 텍스트만 삽입 (서식/배경 제거) ★ ---------- */
+    /* ---------- 입력 이벤트 (보조) ---------- */
+    notepad.addEventListener('input', refresh);
+    notepad.addEventListener('keyup', refresh);
+    notepad.addEventListener('compositionend', refresh);
+
+    /* ---------- 붙여넣기: 순수 텍스트만 ---------- */
     notepad.addEventListener('paste', (e) => {
         e.preventDefault();
-
-        // 클립보드에서 순수 텍스트만 꺼내옴 (HTML/서식 완전 배제)
         const raw = (e.clipboardData || window.clipboardData).getData('text/plain');
         if (!raw) return;
 
-        // 줄바꿈 정규화 (CRLF, CR → LF)
         const text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
         const sel = window.getSelection();
         if (!sel || !sel.rangeCount) return;
 
         const range = sel.getRangeAt(0);
         range.deleteContents();
 
-        // '\n' 을 <br> 로 변환해 조각으로 삽입
         const lines = text.split('\n');
         const frag = document.createDocumentFragment();
         lines.forEach((line, idx) => {
@@ -253,37 +272,31 @@
             if (line.length > 0) frag.appendChild(document.createTextNode(line));
         });
 
-        const lastNode = frag.lastChild;
+        const last = frag.lastChild;
         range.insertNode(frag);
-
-        // 커서를 삽입한 텍스트 끝으로 이동
-        if (lastNode) {
-            const newRange = document.createRange();
-            newRange.setStartAfter(lastNode);
-            newRange.collapse(true);
+        if (last) {
+            const nr = document.createRange();
+            nr.setStartAfter(last);
+            nr.collapse(true);
             sel.removeAllRanges();
-            sel.addRange(newRange);
+            sel.addRange(nr);
         }
-
-        // 저장 및 카운트 갱신
-        updateCharCount();
-        updatePlaceholder();
+        refresh();
         scheduleSave();
     });
 
     /* ---------- 폰트 크기 ---------- */
     function applyFontSize() {
         notepad.style.fontSize = currentFontSize + 'px';
+        placeholder.style.fontSize = currentFontSize + 'px';
         localStorage.setItem(FONT_KEY, currentFontSize);
     }
-
     fontIncrease.addEventListener('click', () => {
         if (currentFontSize < MAX_FONT) {
             currentFontSize = Math.min(currentFontSize + 2, MAX_FONT);
             applyFontSize();
         }
     });
-
     fontDecrease.addEventListener('click', () => {
         if (currentFontSize > MIN_FONT) {
             currentFontSize = Math.max(currentFontSize - 2, MIN_FONT);
@@ -291,13 +304,10 @@
         }
     });
 
-    /* ---------- 저장하기 (txt 다운로드) ---------- */
+    /* ---------- 저장하기 ---------- */
     downloadBtn.addEventListener('click', () => {
         const textData = notepad.innerText;
-        if (!textData.trim()) {
-            alert('다운로드할 내용이 없습니다!');
-            return;
-        }
+        if (!textData.trim()) { alert('다운로드할 내용이 없습니다!'); return; }
 
         const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -319,12 +329,15 @@
         URL.revokeObjectURL(url);
     });
 
-    /* ---------- 전체삭제 (확인창 없이 바로 실행) ---------- */
+    /* ---------- 전체삭제 ---------- */
     clearBtn.addEventListener('click', () => {
         notepad.innerHTML = '';
         localStorage.removeItem(STORAGE_KEY);
-        updateCharCount();
-        updatePlaceholder();
+        refresh();
+        // 전체삭제 버튼을 누르면 포커스가 버튼으로 가므로 placeholder가 다시 보일 수 있음
+        // → 메모장에 다시 포커스
+        notepad.focus();
+        moveCursorToStart();
     });
 
     /* ---------- 시작 ---------- */

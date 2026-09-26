@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 스마트 메모장</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --pad-bg: #f9f9f9;
+        }
+        [data-theme="dark"] {
+            --bg-color: #1e1e1e;
+            --text-color: #f5f5f5;
+            --pad-bg: #2d2d2d;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        textarea {
+            width: 100%;
+            height: 70vh;
+            background-color: var(--pad-bg);
+            color: var(--text-color);
+            border: 1px solid #ccc;
+            padding: 15px;
+            font-size: 18px; /* 1. 여기를 18px로 변경하여 기본 크기를 키웠습니다 */
+            line-height: 1.6;
+            resize: none;
+            box-sizing: border-box;
+            border-radius: 8px;
+        }
+        .footer {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+        button {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: var(--pad-bg);
+            color: var(--text-color);
+            font-weight: bold;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .btn-download {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>📝 My Notepad</h2>
+        <div class="controls">
+            <button id="fontDecrease" title="글자 축소">A-</button>
+            <button id="fontIncrease" title="글자 확대">A+</button>
+            <button id="themeToggle">테마 전환</button>
+            <button id="downloadBtn" class="btn-download">💾 .txt 저장</button>
+        </div>
+    </div>
+    
+    <textarea id="notepad" placeholder="여기에 내용을 입력하면 자동으로 저장됩니다..."></textarea>
+    
+    <div class="footer">
+        <span id="charCount">0</span> 자
+    </div>
+</div>
+
+<script>
+    const notepad = document.getElementById('notepad');
+    const charCount = document.getElementById('charCount');
+    const themeToggle = document.getElementById('themeToggle');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const fontIncrease = document.getElementById('fontIncrease');
+    const fontDecrease = document.getElementById('fontDecrease');
+
+    // 2. 프로그램 내부 변수도 기본값을 18로 변경했습니다
+    let currentFontSize = 18;
+
+    window.onload = () => {
+        notepad.value = localStorage.getItem('savedMemo') || '';
+        updateCharCount();
+        
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+
+        const savedFontSize = localStorage.getItem('notepadFontSize');
+        if (savedFontSize) {
+            currentFontSize = parseInt(savedFontSize);
+            notepad.style.fontSize = currentFontSize + 'px';
+        } else {
+            // 저장된 크기가 없을 때만 기본 18px 적용
+            notepad.style.fontSize = currentFontSize + 'px';
+        }
+    };
+
+    notepad.addEventListener('input', () => {
+        localStorage.setItem('savedMemo', notepad.value);
+        updateCharCount();
+    });
+
+    function updateCharCount() {
+        charCount.innerText = notepad.value.length;
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    });
+
+    fontIncrease.addEventListener('click', () => {
+        if (currentFontSize < 40) {
+            currentFontSize += 2;
+            notepad.style.fontSize = currentFontSize + 'px';
+            localStorage.setItem('notepadFontSize', currentFontSize);
+        }
+    });
+
+    fontDecrease.addEventListener('click', () => {
+        if (currentFontSize > 12) {
+            currentFontSize -= 2;
+            notepad.style.fontSize = currentFontSize + 'px';
+            localStorage.setItem('notepadFontSize', currentFontSize);
+        }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+        const textData = notepad.value;
+        if (!textData.trim()) {
+            alert('다운로드할 내용이 없습니다!');
+            return;
+        }
+
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        
+        const now = new Date();
+        const timestamp = now.getFullYear() + 
+                         String(now.getMonth() + 1).padStart(2, '0') + 
+                         String(now.getDate()).padStart(2, '0') + '_' + 
+                         String(now.getHours()).padStart(2, '0') + 
+                         String(now.getMinutes()).padStart(2, '0');
+        
+        link.download = `notepad_${timestamp}.txt`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+</script>
+
+</body>
+</html>

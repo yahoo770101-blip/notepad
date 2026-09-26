@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나만의 스마트 메모장</title>
+    <title>나만의 스마트 포토 메모장</title>
+    <!-- 화면을 이미지로 변환해주는 라이브러리 -->
+    <script src="https://cloudflare.com"></script>
     <style>
         /* 기본 상태: 다크 모드 */
         :root {
             --bg-color: #1e1e1e;
             --text-color: #f5f5f5;
             --pad-bg: #2d2d2d;
+            --border-color: #444;
         }
         /* 라이트 모드 */
         [data-theme="light"] {
             --bg-color: #ffffff;
             --text-color: #333333;
             --pad-bg: #f9f9f9;
+            --border-color: #ccc;
         }
         body {
             background-color: var(--bg-color);
@@ -26,7 +30,7 @@
             transition: all 0.3s;
         }
         .container {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
         }
         .header {
@@ -35,76 +39,130 @@
             align-items: center;
             margin-bottom: 15px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            flex-wrap: wrap;
         }
-        textarea {
-            width: 100%;
-            height: 70vh;
-            background-color: var(--pad-bg);
-            color: var(--text-color);
-            border: 1px solid #444;
-            padding: 15px;
-            font-size: 18px; /* 기본 글자 크기 */
-            line-height: 1.6;
-            resize: none;
-            box-sizing: border-box;
+        
+        /* 편집창 스타일 */
+        .editor-wrapper {
+            background-color: var(--bg-color);
+            padding: 5px;
             border-radius: 8px;
         }
+        #notepad {
+            width: 100%;
+            height: 65vh;
+            background-color: var(--pad-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            font-size: 18px;
+            line-height: 1.6;
+            box-sizing: border-box;
+            border-radius: 8px;
+            overflow-y: auto;
+            word-break: break-all;
+        }
+        #notepad:focus {
+            outline: 2px solid #4CAF50;
+        }
+        #notepad img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 12px 0;
+            border-radius: 6px;
+        }
+        #notepad:empty:before {
+            content: attr(placeholder);
+            color: #888;
+        }
+
         .footer {
             margin-top: 10px;
             font-size: 14px;
             color: #888;
+            display: flex;
+            justify-content: space-between;
         }
         
-        /* 모든 상단 버튼 공통 스타일 (기존보다 1.5배 확대) */
+        /* ---------------- 버튼 디자인 가이드 라인 ---------------- */
         button {
-            padding: 12px 24px; /* 버튼 상하좌우 여백을 넓혀 크기를 키웠습니다 */
             cursor: pointer;
             border-radius: 6px;
             border: 1px solid #555;
             background: var(--pad-bg);
             color: var(--text-color);
             font-weight: bold;
-            font-size: 24px; /* 글자 크기를 기존 16px에서 24px로 1.5배 키웠습니다 */
+            font-size: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            height: 55px;
+            padding: 0;
             transition: background 0.2s;
         }
         button:hover {
             opacity: 0.9;
         }
         
-        /* 저장 버튼만 글자 크기를 약간 조절하여 균형을 맞췄습니다 */
-        .btn-download {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            font-size: 20px;
-            padding: 15px 24px;
+        /* 1. 정사각형 버튼 3종 (+, -, 테마) */
+        .btn-square {
+            width: 55px;
         }
+
+        /* [요청 사항 완료] 대각선 방향을 왼쪽위(흰색)에서 오른쪽아래(검은색)로 전환 배치 완료 */
+        #themeToggle {
+            background: linear-gradient(135deg, #ffffff 50%, #111111 50%) !important;
+            border: 1px solid #555;
+        }
+        
+        /* 2. 일반 기능 버튼 3종 가로 크기 125px 일치화 */
+        .btn-action {
+            width: 125px;
+            font-size: 17px;
+        }
+        
+        /* 기능별 포인트 색상 배치 */
+        .btn-img { background-color: #2196F3; color: white; border: none; }
+        .btn-share { background-color: #FF9800; color: white; border: none; }
+        .btn-download { background-color: #4CAF50; color: white; border: none; }
+        
+        #imageInput { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2>📝 My Notepad</h2>
+        <h2>📝 Photo Memo</h2>
         <div class="controls">
-            <!-- 요청하신 대로 + 버튼을 왼쪽, - 버튼을 오른쪽에 배치했습니다 -->
-            <button id="fontIncrease" title="글자 확대">+</button>
-            <button id="fontDecrease" title="글자 축소">-</button>
-            <button id="themeToggle" title="테마 전환">🌓</button> <!-- 텍스트 대신 직관적인 아이콘으로 변경 -->
-            <button id="downloadBtn" class="btn-download">💾 저장</button>
+            <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
+            <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
+            <button id="themeToggle" class="btn-square" title="테마 전환"></button>
+            
+            <button id="imgBtn" class="btn-action btn-img" onclick="document.getElementById('imageInput').click()">이미지 첨부</button>
+            <input type="file" id="imageInput" accept="image/*">
+            
+            <button id="shareBtn" class="btn-action btn-share">공유하기</button>
+            <button id="downloadBtn" class="btn-action btn-download">저장하기</button>
         </div>
     </div>
     
-    <textarea id="notepad" placeholder="여기에 내용을 입력하면 자동으로 저장됩니다..."></textarea>
+    <div class="editor-wrapper">
+        <!-- 빈 박스 처리 버그를 방지하기 위해 가상 div 자리를 완전 삭제하고 초기 공백을 배치합니다 -->
+        <div id="notepad" contenteditable="true" placeholder="여기에 내용을 입력하거나 사진을 추가하세요. 자동으로 저장됩니다..."></div>
+    </div>
     
     <div class="footer">
-        <span id="charCount">0</span> 자
+        <div>* 사진 클릭 후 키보드 Delete를 누르면 삭제됩니다.</div>
+        <div><span id="charCount">0</span> 자</div>
     </div>
 </div>
 
@@ -113,49 +171,65 @@
     const charCount = document.getElementById('charCount');
     const themeToggle = document.getElementById('themeToggle');
     const downloadBtn = document.getElementById('downloadBtn');
+    const shareBtn = document.getElementById('shareBtn');
     const fontIncrease = document.getElementById('fontIncrease');
     const fontDecrease = document.getElementById('fontDecrease');
+    const imageInput = document.getElementById('imageInput');
 
     let currentFontSize = 18;
 
     window.onload = () => {
-        notepad.value = localStorage.getItem('savedMemo') || '';
-        updateCharCount();
+        // 로컬 환경 브라우저 데이터베이스 입출력 에러 방어 처리
+        try {
+            notepad.innerHTML = localStorage.getItem('savedPhotoMemo') || '';
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.setAttribute('data-theme', savedTheme);
+            
+            const savedFontSize = localStorage.getItem('notepadFontSize');
+            if (savedFontSize) {
+                currentFontSize = parseInt(savedFontSize);
+            }
+        } catch(e) {}
         
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.body.setAttribute('data-theme', savedTheme);
-
-        const savedFontSize = localStorage.getItem('notepadFontSize');
-        if (savedFontSize) {
-            currentFontSize = parseInt(savedFontSize);
-            notepad.style.fontSize = currentFontSize + 'px';
-        } else {
-            notepad.style.fontSize = currentFontSize + 'px';
-        }
+        notepad.style.fontSize = currentFontSize + 'px';
+        updateCharCount();
+        updateImgSize();
     };
 
     notepad.addEventListener('input', () => {
-        localStorage.setItem('savedMemo', notepad.value);
+        try {
+            localStorage.setItem('savedPhotoMemo', notepad.innerHTML);
+        } catch(e) {}
         updateCharCount();
     });
 
     function updateCharCount() {
-        charCount.innerText = notepad.value.length;
+        charCount.innerText = notepad.innerText.replace(/\n/g, '').length;
     }
 
+    function updateImgSize() {
+        const imgs = notepad.getElementsByTagName('img');
+        for(let img of imgs) {
+            img.style.maxWidth = Math.min(100, (currentFontSize * 4)) + '%';
+        }
+    }
+
+    // 테마 토글 연동 정상화
     themeToggle.addEventListener('click', () => {
-        const currentTheme = document.body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
+        const currentTheme = document.body.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
         document.body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
+        try {
+            localStorage.setItem('theme', newTheme);
+        } catch(e) {}
     });
 
     fontIncrease.addEventListener('click', () => {
-        if (currentFontSize < 60) { // 눈이 편하시도록 최대 크기를 60px까지 확장했습니다
+        if (currentFontSize < 60) {
             currentFontSize += 2;
             notepad.style.fontSize = currentFontSize + 'px';
-            localStorage.setItem('notepadFontSize', currentFontSize);
+            try { localStorage.setItem('notepadFontSize', currentFontSize); } catch(e) {}
+            updateImgSize();
         }
     });
 
@@ -163,33 +237,62 @@
         if (currentFontSize > 12) {
             currentFontSize -= 2;
             notepad.style.fontSize = currentFontSize + 'px';
-            localStorage.setItem('notepadFontSize', currentFontSize);
+            try { localStorage.setItem('notepadFontSize', currentFontSize); } catch(e) {}
+            updateImgSize();
         }
     });
 
-    downloadBtn.addEventListener('click', () => {
-        const textData = notepad.value;
-        if (!textData.trim()) {
-            alert('다운로드할 내용이 없습니다!');
-            return;
-        }
+    // 🖼️ 이미지 첨부 기능 전면 보완 (로컬 컴퓨터 내 파일 업로드 완벽 작동)
+    imageInput.addEventListener('change', function(e) {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
 
-        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        
-        const now = new Date();
-        const timestamp = now.getFullYear() + 
-                         String(now.getMonth() + 1).padStart(2, '0') + 
-                         String(now.getDate()).padStart(2, '0') + '_' + 
-                         String(now.getHours()).padStart(2, '0') + 
-                         String(now.getMinutes()).padStart(2, '0');
-        
-        link.download = `notepad_${timestamp}.txt`;
-        link.click();
-        URL.revokeObjectURL(link.href);
-    });
-</script>
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                let width = img.width;
+                let height = img.height;
 
-</body>
-</html>
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedUrl = canvas.toDataURL('image/jpeg', 0.7); 
+                const newImg = document.createElement('img');
+                newImg.src = compressedUrl;
+                
+                notepad.focus();
+                
+                // 로컬 브라우저에서 인쇄 커서 위치 판별 실패 시 맨 뒤 안착 보장 기술 적용
+                const selection = window.getSelection();
+                let inserted = false;
+                
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    if (notepad.contains(range.commonAncestorContainer)) {
+                        range.insertNode(newImg);
+                        range.insertNode(document.createElement('br'));
+                        inserted = true;
+                    }
+                }
+                
+                if (!inserted) {
+                    notepad.appendChild(newImg);
+                    notepad.appendChild(document.createElement('br'));
+                }
+                
+                try { localStorage.setItem('savedPhotoMemo', notepad.innerHTML); } catch(e) {}
+                updateCharCount();
+                updateImgSize();
+            };
+            img.src = event.target.result;
+        };

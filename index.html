@@ -75,22 +75,9 @@
             outline: 2px solid #2196F3;
         }
 
-        #notepad img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 15px 0;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        #notepad img.selected {
-            outline: 3px solid #2196F3;
-        }
-
         /* placeholder */
         #notepad.is-empty:before {
-            content: "";
+            content: "여기를 클릭하고, 메모하세요.";
             color: #666;
             cursor: text;
             pointer-events: none;
@@ -101,7 +88,7 @@
             font-size: 14px;
             color: #666;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             flex-wrap: wrap;
             gap: 8px;
         }
@@ -135,11 +122,11 @@
             font-size: 16px;
         }
 
-        .btn-download { background-color: #4CAF50; color: white; border: none; }
-        .btn-download:hover { background-color: #43A047; }
-
         .btn-clear { background-color: #b71c1c; color: white; border: none; }
         .btn-clear:hover { background-color: #8e0000; }
+
+        .btn-download { background-color: #4CAF50; color: white; border: none; }
+        .btn-download:hover { background-color: #43A047; }
 
         @media (max-width: 600px) {
             .btn-action { min-width: 90px; font-size: 14px; height: 48px; }
@@ -157,8 +144,8 @@
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">−</button>
 
+            <button id="clearBtn" class="btn-action btn-clear" title="전체 삭제">전체삭제</button>
             <button id="downloadBtn" class="btn-action btn-download" title="txt로 저장">저장하기</button>
-            <button id="clearBtn" class="btn-action btn-clear" title="전체 지우기">전체 지우기</button>
         </div>
     </div>
 
@@ -167,7 +154,6 @@
     </div>
 
     <div class="footer">
-        <div>* 아이엠 금융컨설팅(IM Financial Consulting)</div>
         <div><span id="charCount">0</span> 자</div>
     </div>
 </div>
@@ -191,13 +177,12 @@
 
     let currentFontSize = DEFAULT_FONT;
     let saveTimer = null;
-    let selectedImg = null;
 
     /* ---------- 초기화 ---------- */
     function init() {
-        const savedHTML = localStorage.getItem(STORAGE_KEY) || '';
-        if (savedHTML) {
-            notepad.innerHTML = savedHTML;
+        const savedText = localStorage.getItem(STORAGE_KEY) || '';
+        if (savedText) {
+            notepad.innerText = savedText;
         }
 
         const savedFont = parseInt(localStorage.getItem(FONT_KEY), 10);
@@ -215,10 +200,9 @@
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = setTimeout(() => {
             try {
-                localStorage.setItem(STORAGE_KEY, notepad.innerHTML);
+                localStorage.setItem(STORAGE_KEY, notepad.innerText);
             } catch (e) {
-                console.warn('저장 실패(용량 초과 가능):', e);
-                alert('저장 공간이 부족합니다. 이미지를 줄여주세요.');
+                console.warn('저장 실패:', e);
             }
         }, 250);
     }
@@ -233,7 +217,7 @@
         const isEmpty =
             notepad.innerHTML.trim() === '' ||
             notepad.innerHTML === '<br>' ||
-            (notepad.innerText.trim() === '' && notepad.querySelectorAll('img').length === 0);
+            notepad.innerText.trim() === '';
         notepad.classList.toggle('is-empty', isEmpty);
     }
 
@@ -242,94 +226,6 @@
         updateCharCount();
         updatePlaceholder();
         scheduleSave();
-    });
-
-    /* ---------- 붙여넣기: 이미지/일반 텍스트 ---------- */
-    notepad.addEventListener('paste', (e) => {
-        const items = e.clipboardData && e.clipboardData.items;
-        if (!items) return;
-
-        for (const item of items) {
-            if (item.type && item.type.indexOf('image') === 0) {
-                e.preventDefault();
-                const file = item.getAsFile();
-                if (file) insertImageFromFile(file);
-                return;
-            }
-        }
-    });
-
-    /* ---------- 이미지 삽입 (붙여넣기 전용) ---------- */
-    function insertImageFromFile(file) {
-        if (!file || !file.type.startsWith('image/')) return;
-
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = document.createElement('img');
-            img.src = ev.target.result;
-            img.alt = '첨부 이미지';
-            img.title = '클릭 후 Delete로 삭제';
-
-            const sel = window.getSelection();
-            if (sel && sel.rangeCount && notepad.contains(sel.anchorNode)) {
-                const range = sel.getRangeAt(0);
-                range.deleteContents();
-                range.insertNode(img);
-                range.setStartAfter(img);
-                range.setEndAfter(img);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            } else {
-                notepad.appendChild(img);
-            }
-
-            // 이미지 뒤에 줄바꿈용 div 하나
-            const br = document.createElement('div');
-            br.innerHTML = '<br>';
-            if (img.nextSibling) {
-                notepad.insertBefore(br, img.nextSibling);
-            } else {
-                notepad.appendChild(br);
-            }
-
-            // 커서를 br 뒤로 이동
-            const range2 = document.createRange();
-            range2.setStart(br, 0);
-            range2.collapse(true);
-            const sel2 = window.getSelection();
-            sel2.removeAllRanges();
-            sel2.addRange(range2);
-
-            updateCharCount();
-            updatePlaceholder();
-            scheduleSave();
-        };
-        reader.readAsDataURL(file);
-    }
-
-    /* ---------- 이미지 선택/삭제 ---------- */
-    notepad.addEventListener('click', (e) => {
-        if (e.target.tagName === 'IMG') {
-            if (selectedImg) selectedImg.classList.remove('selected');
-            selectedImg = e.target;
-            selectedImg.classList.add('selected');
-        } else {
-            if (selectedImg) {
-                selectedImg.classList.remove('selected');
-                selectedImg = null;
-            }
-        }
-    });
-
-    notepad.addEventListener('keydown', (e) => {
-        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImg) {
-            e.preventDefault();
-            selectedImg.remove();
-            selectedImg = null;
-            updateCharCount();
-            updatePlaceholder();
-            scheduleSave();
-        }
     });
 
     /* ---------- 폰트 크기 ---------- */
@@ -352,17 +248,13 @@
         }
     });
 
-    /* ---------- 다운로드 ---------- */
+    /* ---------- 저장하기 (txt 다운로드) ---------- */
     downloadBtn.addEventListener('click', () => {
-        const hasText = notepad.innerText.trim().length > 0;
-        const hasImg  = notepad.querySelectorAll('img').length > 0;
-
-        if (!hasText && !hasImg) {
+        const textData = notepad.innerText;
+        if (!textData.trim()) {
             alert('다운로드할 내용이 없습니다!');
             return;
         }
-
-        const textData = notepad.innerText;
 
         const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -384,11 +276,10 @@
         URL.revokeObjectURL(url);
     });
 
-    /* ---------- 전체 지우기 (확인창 없이 바로 실행) ---------- */
+    /* ---------- 전체삭제 (확인창 없이 바로 실행) ---------- */
     clearBtn.addEventListener('click', () => {
         notepad.innerHTML = '';
         localStorage.removeItem(STORAGE_KEY);
-        if (selectedImg) selectedImg = null;
         updateCharCount();
         updatePlaceholder();
     });

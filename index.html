@@ -3,28 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나만의 스마트 포토 메모장</title>
-    <!-- 가장 가벼운 정밀 화면 캡처 라이브러리 -->
-    <script src="https://jsdelivr.net"></script>
+    <title>IM NotePad</title>
     <style>
-        /* 눈이 가장 편안한 시크한 올 블랙 스타일 */
         :root {
-            --bg-color: #121212; 
-            --text-color: #ffffff; 
-            --pad-bg: #1e1e1e; 
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --pad-bg: #1e1e1e;
             --border-color: #333333;
         }
+
+        * { box-sizing: border-box; }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
             margin: 0;
             padding: 20px;
         }
+
         .container {
             max-width: 850px;
             margin: 0 auto;
         }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -33,19 +36,25 @@
             flex-wrap: wrap;
             gap: 15px;
         }
+
+        .header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
         .controls {
             display: flex;
             gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
-        
+
         .editor-wrapper {
             background-color: var(--bg-color);
             padding: 5px;
             border-radius: 8px;
         }
-        /* 입력창 스타일 */
+
         #notepad {
             width: 100%;
             height: 65vh;
@@ -53,29 +62,38 @@
             color: var(--text-color);
             border: 1px solid var(--border-color);
             padding: 20px;
-            font-size: 20px; /* 기본 20px 시원한 글씨 시작 */
+            font-size: 20px;
             line-height: 1.7;
-            box-sizing: border-box;
             border-radius: 8px;
             overflow-y: auto;
-            word-break: break-all;
+            word-break: break-word;
+            white-space: pre-wrap;
+            outline: none;
         }
+
         #notepad:focus {
             outline: 2px solid #2196F3;
         }
+
         #notepad img {
             max-width: 100%;
             height: auto;
             display: block;
             margin: 15px 0;
             border-radius: 6px;
+            cursor: pointer;
         }
-        
-        /* 가이드 안내 문구 */
-        #notepad:empty:before {
-            content: "여기에 내용을 입력하거나 사진을 추가하세요. 자동으로 저장됩니다...";
+
+        #notepad img.selected {
+            outline: 3px solid #2196F3;
+        }
+
+        /* placeholder */
+        #notepad.is-empty:before {
+            content: "";
             color: #666;
             cursor: text;
+            pointer-events: none;
         }
 
         .footer {
@@ -84,9 +102,10 @@
             color: #666;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
         }
-        
-        /* ---------------- 버튼 디자인 설정 ---------------- */
+
         button {
             cursor: pointer;
             border-radius: 6px;
@@ -97,173 +116,290 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-sizing: border-box;
             height: 55px;
-            transition: background 0.2s;
+            padding: 0 12px;
+            transition: background 0.15s, transform 0.05s;
+            user-select: none;
         }
-        button:hover {
-            background: #2a2a2a;
-        }
-        
-        /* 기호 크기를 36픽셀(px)로 돋보기 없이 보이게 확대 */
+        button:hover { background: #2a2a2a; }
+        button:active { transform: scale(0.97); }
+
         .btn-square {
             width: 55px;
-            font-size: 36px; 
-            padding-bottom: 4px; 
+            font-size: 32px;
+            line-height: 1;
         }
-        
-        /* 기능 버튼 규격 통일 */
+
         .btn-action {
-            width: 130px;
-            font-size: 18px;
+            min-width: 120px;
+            font-size: 16px;
         }
-        
-        .btn-img { background-color: #2196F3; color: white; border: none; }
+
         .btn-download { background-color: #4CAF50; color: white; border: none; }
-        
-        #imageInput { display: none; }
+        .btn-download:hover { background-color: #43A047; }
+
+        .btn-clear { background-color: #b71c1c; color: white; border: none; }
+        .btn-clear:hover { background-color: #8e0000; }
+
+        @media (max-width: 600px) {
+            .btn-action { min-width: 90px; font-size: 14px; height: 48px; }
+            .btn-square { width: 48px; height: 48px; font-size: 26px; }
+            #notepad { font-size: 18px; padding: 14px; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2>📝 Photo Memo</h2>
+        <h2>📝IM NotePad</h2>
         <div class="controls">
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
-            <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
-            
-            <button id="imgBtn" class="btn-action btn-img" onclick="document.getElementById('imageInput').click()">이미지 첨부</button>
-            <input type="file" id="imageInput" accept="image/*">
-            
-            <button id="downloadBtn" class="btn-action btn-download">저장하기</button>
+            <button id="fontDecrease" class="btn-square" title="글자 축소">−</button>
+
+            <button id="downloadBtn" class="btn-action btn-download" title="txt로 저장">저장하기</button>
+            <button id="clearBtn" class="btn-action btn-clear" title="전체 지우기">전체 지우기</button>
         </div>
     </div>
-    
+
     <div class="editor-wrapper">
-        <div id="notepad" contenteditable="true"></div>
+        <div id="notepad" contenteditable="true" spellcheck="false"></div>
     </div>
-    
+
     <div class="footer">
-        <div>* 사진 클릭 후 키보드 Delete를 누르면 삭제됩니다.</div>
+        <div>* 아이엠 금융컨설팅(IM Financial Consulting)</div>
         <div><span id="charCount">0</span> 자</div>
     </div>
 </div>
 
 <script>
-    var notepad = document.getElementById('notepad');
-    var charCount = document.getElementById('charCount');
-    var downloadBtn = document.getElementById('downloadBtn');
-    var fontIncrease = document.getElementById('fontIncrease');
-    var fontDecrease = document.getElementById('fontDecrease');
-    var imageInput = document.getElementById('imageInput');
+(function () {
+    'use strict';
 
-    var currentFontSize = 20; 
+    const STORAGE_KEY = 'savedMemo';
+    const FONT_KEY = 'notepadFontSize';
+    const DEFAULT_FONT = 20;
+    const MIN_FONT = 12;
+    const MAX_FONT = 40;
 
-    window.onload = function() {
-        notepad.innerHTML = localStorage.getItem('savedPhotoMemo') || '';
-        
-        var savedFontSize = localStorage.getItem('notepadFontSize');
-        if (savedFontSize) {
-            currentFontSize = parseInt(savedFontSize);
+    const notepad      = document.getElementById('notepad');
+    const charCount    = document.getElementById('charCount');
+    const downloadBtn  = document.getElementById('downloadBtn');
+    const clearBtn     = document.getElementById('clearBtn');
+    const fontIncrease = document.getElementById('fontIncrease');
+    const fontDecrease = document.getElementById('fontDecrease');
+
+    let currentFontSize = DEFAULT_FONT;
+    let saveTimer = null;
+    let selectedImg = null;
+
+    /* ---------- 초기화 ---------- */
+    function init() {
+        const savedHTML = localStorage.getItem(STORAGE_KEY) || '';
+        if (savedHTML) {
+            notepad.innerHTML = savedHTML;
+        }
+
+        const savedFont = parseInt(localStorage.getItem(FONT_KEY), 10);
+        if (!isNaN(savedFont) && savedFont >= MIN_FONT && savedFont <= MAX_FONT) {
+            currentFontSize = savedFont;
         }
         notepad.style.fontSize = currentFontSize + 'px';
-        
-        updateCharCount();
-        updateImgSize();
-    };
 
-    notepad.addEventListener('input', function() {
-        localStorage.setItem('savedPhotoMemo', notepad.innerHTML);
         updateCharCount();
-    });
+        updatePlaceholder();
+    }
 
+    /* ---------- 저장 (디바운스) ---------- */
+    function scheduleSave() {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+            try {
+                localStorage.setItem(STORAGE_KEY, notepad.innerHTML);
+            } catch (e) {
+                console.warn('저장 실패(용량 초과 가능):', e);
+                alert('저장 공간이 부족합니다. 이미지를 줄여주세요.');
+            }
+        }, 250);
+    }
+
+    /* ---------- 글자수 / placeholder ---------- */
     function updateCharCount() {
-        charCount.innerText = notepad.innerText.replace(/\n/g, '').length;
+        const text = notepad.innerText.replace(/\n$/, '');
+        charCount.textContent = text.length;
     }
 
-    function updateImgSize() {
-        var imgs = notepad.getElementsByTagName('img');
-        for (var i = 0; i < imgs.length; i++) {
-            imgs[i].style.maxWidth = Math.min(100, (currentFontSize * 4)) + '%';
-        }
+    function updatePlaceholder() {
+        const isEmpty =
+            notepad.innerHTML.trim() === '' ||
+            notepad.innerHTML === '<br>' ||
+            (notepad.innerText.trim() === '' && notepad.querySelectorAll('img').length === 0);
+        notepad.classList.toggle('is-empty', isEmpty);
     }
 
-    fontIncrease.addEventListener('click', function() {
-        if (currentFontSize < 60) {
-            currentFontSize += 2;
-            notepad.style.fontSize = currentFontSize + 'px';
-            localStorage.setItem('notepadFontSize', currentFontSize);
-            updateImgSize();
+    /* ---------- 입력 이벤트 ---------- */
+    notepad.addEventListener('input', () => {
+        updateCharCount();
+        updatePlaceholder();
+        scheduleSave();
+    });
+
+    /* ---------- 붙여넣기: 이미지/일반 텍스트 ---------- */
+    notepad.addEventListener('paste', (e) => {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+
+        for (const item of items) {
+            if (item.type && item.type.indexOf('image') === 0) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                if (file) insertImageFromFile(file);
+                return;
+            }
         }
     });
 
-    fontDecrease.addEventListener('click', function() {
-        if (currentFontSize > 12) {
-            currentFontSize -= 2;
-            notepad.style.fontSize = currentFontSize + 'px';
-            localStorage.setItem('notepadFontSize', currentFontSize);
-            updateImgSize();
-        }
-    });
+    /* ---------- 이미지 삽입 (붙여넣기 전용) ---------- */
+    function insertImageFromFile(file) {
+        if (!file || !file.type.startsWith('image/')) return;
 
-    imageInput.addEventListener('change', function(e) {
-        if (!e.target.files || e.target.files.length === 0) return;
-        var file = e.target.files;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = document.createElement('img');
+            img.src = ev.target.result;
+            img.alt = '첨부 이미지';
+            img.title = '클릭 후 Delete로 삭제';
 
-        var reader = new FileReader();
-        reader.onload = function(event) {
-            var newImg = document.createElement('img');
-            newImg.src = event.target.result;
-            
-            notepad.focus();
-            notepad.appendChild(newImg);
-            notepad.appendChild(document.createElement('br'));
-            
-            localStorage.setItem('savedPhotoMemo', notepad.innerHTML);
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount && notepad.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(img);
+                range.setStartAfter(img);
+                range.setEndAfter(img);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            } else {
+                notepad.appendChild(img);
+            }
+
+            // 이미지 뒤에 줄바꿈용 div 하나
+            const br = document.createElement('div');
+            br.innerHTML = '<br>';
+            if (img.nextSibling) {
+                notepad.insertBefore(br, img.nextSibling);
+            } else {
+                notepad.appendChild(br);
+            }
+
+            // 커서를 br 뒤로 이동
+            const range2 = document.createRange();
+            range2.setStart(br, 0);
+            range2.collapse(true);
+            const sel2 = window.getSelection();
+            sel2.removeAllRanges();
+            sel2.addRange(range2);
+
             updateCharCount();
-            updateImgSize();
+            updatePlaceholder();
+            scheduleSave();
         };
         reader.readAsDataURL(file);
-        imageInput.value = ''; 
+    }
+
+    /* ---------- 이미지 선택/삭제 ---------- */
+    notepad.addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG') {
+            if (selectedImg) selectedImg.classList.remove('selected');
+            selectedImg = e.target;
+            selectedImg.classList.add('selected');
+        } else {
+            if (selectedImg) {
+                selectedImg.classList.remove('selected');
+                selectedImg = null;
+            }
+        }
     });
 
-    // 💾 [속도 무한 최적화] 스크롤 계산을 완벽히 걷어내고, 현재 눈에 보이는 1장만 번개처럼 캡처하는 최종 장치
-    downloadBtn.addEventListener('click', function() {
-        if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
-            alert('내용이 없습니다!');
+    notepad.addEventListener('keydown', (e) => {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && selectedImg) {
+            e.preventDefault();
+            selectedImg.remove();
+            selectedImg = null;
+            updateCharCount();
+            updatePlaceholder();
+            scheduleSave();
+        }
+    });
+
+    /* ---------- 폰트 크기 ---------- */
+    function applyFontSize() {
+        notepad.style.fontSize = currentFontSize + 'px';
+        localStorage.setItem(FONT_KEY, currentFontSize);
+    }
+
+    fontIncrease.addEventListener('click', () => {
+        if (currentFontSize < MAX_FONT) {
+            currentFontSize = Math.min(currentFontSize + 2, MAX_FONT);
+            applyFontSize();
+        }
+    });
+
+    fontDecrease.addEventListener('click', () => {
+        if (currentFontSize > MIN_FONT) {
+            currentFontSize = Math.max(currentFontSize - 2, MIN_FONT);
+            applyFontSize();
+        }
+    });
+
+    /* ---------- 다운로드 ---------- */
+    downloadBtn.addEventListener('click', () => {
+        const hasText = notepad.innerText.trim().length > 0;
+        const hasImg  = notepad.querySelectorAll('img').length > 0;
+
+        if (!hasText && !hasImg) {
+            alert('다운로드할 내용이 없습니다!');
             return;
         }
 
-        if (typeof html2canvas === 'undefined') {
-            alert('모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요!');
-            return;
-        }
+        const textData = notepad.innerText;
 
-        // [핵심 패치] 스크롤 뒤에 숨은 긴 영역을 무시하고, 오직 현재 눈에 보이는 창 크기(1장 규격)만 강제 지정해 찍습니다.
-        // 이 덕분에 스마트폰의 과부하가 원천 차단됩니다.
-        html2canvas(notepad, {
-            backgroundColor: '#1e1e1e', 
-            useCORS: true,
-            scale: 2, // 선명도 2배 유지
-            height: notepad.clientHeight, // 실제 눈에 쏙 들어와 있는 창 높이만 고정
-            windowHeight: notepad.clientHeight,
-            scrollY: 0
-        }).then(function(canvas) {
-            canvas.toBlob(function(blob) {
-                var now = new Date();
-                var timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
-                
-                var link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'my_memo_' + timestamp + '.jpg';
-                link.click();
-                URL.revokeObjectURL(link.href);
-            }, 'image/jpeg', 0.95);
-        }).catch(function(err) {
-            alert("이미지 저장 중 오류가 발생했습니다.");
-        });
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+
+        const now = new Date();
+        const ts =
+            now.getFullYear() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') + '_' +
+            String(now.getHours()).padStart(2, '0') +
+            String(now.getMinutes()).padStart(2, '0');
+
+        link.download = `notepad_${ts}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     });
+
+    /* ---------- 전체 지우기 (확인창 없이 바로 실행) ---------- */
+    clearBtn.addEventListener('click', () => {
+        notepad.innerHTML = '';
+        localStorage.removeItem(STORAGE_KEY);
+        if (selectedImg) selectedImg = null;
+        updateCharCount();
+        updatePlaceholder();
+    });
+
+    /* ---------- 시작 ---------- */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
 </script>
 
 </body>

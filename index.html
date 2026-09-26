@@ -4,22 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 스마트 포토 메모장</title>
-    <!-- [안전화 적용] 보안 경고 및 차단 에러를 완벽히 우회하여 화면을 한 장의 사진으로 구워주는 공인 라이브러리 주소입니다 -->
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <!-- 글과 사진 전체를 통째로 선명하게 찍어주는 공인 라이브러리 -->
+    <script src="https://hertzen.com"></script>
     <style>
-        /* 기본 상태: 다크 모드 */
+        /* 테마를 삭제하고 완전히 고정된 딥 블랙 스타일을 적용했습니다 */
         :root {
-            --bg-color: #1e1e1e;
-            --text-color: #f5f5f5;
-            --pad-bg: #2d2d2d;
-            --border-color: #444;
-        }
-        /* 라이트 모드 */
-        [data-theme="light"] {
-            --bg-color: #ffffff;
-            --text-color: #333333;
-            --pad-bg: #f9f9f9;
-            --border-color: #ccc;
+            --bg-color: #121212; /* 더 깊고 어두운 블랙 */
+            --text-color: #ffffff; /* 순백색 글자 */
+            --pad-bg: #1e1e1e; /* 입력창 배경 */
+            --border-color: #333333;
         }
         body {
             background-color: var(--bg-color);
@@ -27,7 +20,6 @@
             font-family: sans-serif;
             margin: 0;
             padding: 20px;
-            transition: all 0.3s;
         }
         .container {
             max-width: 850px;
@@ -43,93 +35,88 @@
         }
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
         
-        /* 편집창 스타일 */
+        /* 캡처할 때 테두리가 잘리지 않도록 감싸는 특수 영역 패딩 주입 */
         .editor-wrapper {
             background-color: var(--bg-color);
             padding: 5px;
             border-radius: 8px;
         }
+        /* 입력창 스타일 */
         #notepad {
             width: 100%;
             height: 65vh;
             background-color: var(--pad-bg);
             color: var(--text-color);
             border: 1px solid var(--border-color);
-            padding: 15px;
-            font-size: 18px;
-            line-height: 1.6;
+            padding: 20px;
+            font-size: 20px; /* 1. 시작 글자 크기를 20px로 설정했습니다 */
+            line-height: 1.7;
             box-sizing: border-box;
             border-radius: 8px;
             overflow-y: auto;
             word-break: break-all;
         }
         #notepad:focus {
-            outline: 2px solid #4CAF50;
+            outline: 2px solid #2196F3;
         }
         #notepad img {
             max-width: 100%;
             height: auto;
             display: block;
-            margin: 12px 0;
+            margin: 15px 0;
             border-radius: 6px;
         }
         
         /* 안내 가이드 문구 */
         #notepad:empty:before {
             content: "여기에 내용을 입력하거나 사진을 추가하세요. 자동으로 저장됩니다...";
-            color: #888;
+            color: #666;
             cursor: text;
         }
 
         .footer {
             margin-top: 10px;
             font-size: 14px;
-            color: #888;
+            color: #666;
             display: flex;
             justify-content: space-between;
         }
         
-        /* ---------------- 보내주신 이미지 피드백 규격 고정 ---------------- */
+        /* ---------------- 버튼 디자인 설정 ---------------- */
         button {
             cursor: pointer;
             border-radius: 6px;
-            border: 1px solid #555;
+            border: 1px solid #444;
             background: var(--pad-bg);
             color: var(--text-color);
             font-weight: bold;
-            font-size: 22px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             box-sizing: border-box;
             height: 55px;
-            padding: 0;
             transition: background 0.2s;
         }
         button:hover {
-            opacity: 0.9;
+            background: #2a2a2a;
         }
         
-        /* 1. 정사각형 버튼 군 (테마가 맨 앞, 그 뒤로 +, - 순서 완벽 고정) */
+        /* 2. 글자 확대/축소 버튼 크기를 36px 거대 규격으로 지정했습니다 */
         .btn-square {
             width: 55px;
-        }
-
-        /* 왼쪽 위 흰색, 오른쪽 아래 검은색 대각선 반반 고정 */
-        #themeToggle {
-            background: linear-gradient(135deg, #ffffff 50%, #111111 50%) !important;
-            border: 1px solid #555;
+            font-size: 36px; 
+            padding-bottom: 4px; /* 기호 정중앙 정렬 보정 */
         }
         
-        /* 2. 가로 길이가 일치하는 기능 버튼 군 */
+        /* 3. 일반 기능 버튼 군 디자인 고정 */
         .btn-action {
-            width: 125px;
-            font-size: 17px;
+            width: 130px;
+            font-size: 18px;
         }
         
         /* 기능별 포인트 컬러 */
@@ -145,8 +132,7 @@
     <div class="header">
         <h2>📝 Photo Memo</h2>
         <div class="controls">
-            <!-- 요청하신 대로 정렬 순서를 명확하게 고정했습니다 -->
-            <button id="themeToggle" class="btn-square" title="테마 전환"></button>
+            <!-- 테마 버튼을 완벽히 도려내고, 거대화된 +와 - 버튼만 단정하게 배치했습니다 -->
             <button id="fontIncrease" class="btn-square" title="글자 확대">+</button>
             <button id="fontDecrease" class="btn-square" title="글자 축소">-</button>
             
@@ -157,7 +143,7 @@
         </div>
     </div>
     
-    <div class="editor-wrapper">
+    <div class="editor-wrapper" id="captureArea">
         <div id="notepad" contenteditable="true"></div>
     </div>
     
@@ -170,20 +156,16 @@
 <script>
     var notepad = document.getElementById('notepad');
     var charCount = document.getElementById('charCount');
-    var themeToggle = document.getElementById('themeToggle');
     var downloadBtn = document.getElementById('downloadBtn');
     var fontIncrease = document.getElementById('fontIncrease');
     var fontDecrease = document.getElementById('fontDecrease');
     var imageInput = document.getElementById('imageInput');
 
-    var currentFontSize = 18;
+    var currentFontSize = 20; // 기본 시작 값을 20으로 맞춤
 
     window.onload = function() {
         notepad.innerHTML = localStorage.getItem('savedPhotoMemo') || '';
         
-        var savedTheme = localStorage.getItem('theme') || 'dark';
-        document.body.setAttribute('data-theme', savedTheme);
-
         var savedFontSize = localStorage.getItem('notepadFontSize');
         if (savedFontSize) {
             currentFontSize = parseInt(savedFontSize);
@@ -210,13 +192,6 @@
         }
     }
 
-    themeToggle.addEventListener('click', function() {
-        var currentTheme = document.body.getAttribute('data-theme') || 'dark';
-        var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-    });
-
     fontIncrease.addEventListener('click', function() {
         if (currentFontSize < 60) {
             currentFontSize += 2;
@@ -237,7 +212,7 @@
 
     imageInput.addEventListener('change', function(e) {
         if (!e.target.files || e.target.files.length === 0) return;
-        var file = e.target.files[0];
+        var file = e.target.files;
 
         var reader = new FileReader();
         reader.onload = function(event) {
@@ -256,7 +231,7 @@
         imageInput.value = ''; 
     });
 
-    // 💾 [대보완] 글과 사진을 통째로 엮어서 하나의 선명한 대형 이미지 파일(.jpg)로 다운로드하는 최종 완성형 시스템
+    // 💾 [대혁신 수리] 긴 글과 사진이 잘리지 않고 끝까지 찍히는 완전체 스냅샷 다운로드 장치
     downloadBtn.addEventListener('click', function() {
         if (!notepad.innerText.trim() && notepad.getElementsByTagName('img').length === 0) {
             alert('내용이 없습니다!');
@@ -264,28 +239,25 @@
         }
 
         if (typeof html2canvas === 'undefined') {
-            alert('인쇄 모듈 로딩 중입니다. 1초만 기다린 후 다시 눌러주세요!');
+            alert('모듈을 불러오는 중입니다. 잠시 후 다시 시도해 주세요!');
             return;
         }
 
-        // 현재 테마 색상을 실시간으로 읽어와서 사진첩 내부 배경을 예쁘게 통일시킵니다
-        var currentTheme = document.body.getAttribute('data-theme');
-        var bgPattern = currentTheme === 'light' ? '#ffffff' : '#2d2d2d';
-
-        // 메모 입력창 박스 자체를 그대로 사진으로 정밀 인쇄합니다
+        // [핵심] 보이지 않는 아래 영역까지 전부 확장하여 캡처하도록 계산하는 특수 옵션 주입
         html2canvas(notepad, {
-            backgroundColor: bgPattern,
+            backgroundColor: '#1e1e1e', // 칠해질 내부 블랙 색상 고정
             useCORS: true,
-            scale: 2 // 스마트폰 화면에서도 글자와 하트 사진이 흐릿하지 않고 선명하게 보이도록 화질 2배 강화
+            scale: 2, // 초선명 화질 강화 유지
+            height: notepad.scrollHeight, // 화면 높이가 아닌, 보이지 않는 아래 글끝까지 높이 강제 추적
+            windowHeight: notepad.scrollHeight
         }).then(function(canvas) {
             canvas.toBlob(function(blob) {
                 var now = new Date();
                 var timestamp = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '_' + String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
                 
-                // 최종 .jpg 이미지 추출 다운로드 발송
                 var link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'my_photo_memo_' + timestamp + '.jpg';
+                link.download = 'my_complete_memo_' + timestamp + '.jpg';
                 link.click();
                 URL.revokeObjectURL(link.href);
             }, 'image/jpeg', 0.95);
